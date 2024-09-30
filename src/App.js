@@ -1,4 +1,5 @@
 import { useState } from 'react'; 
+import PokemonNFTABI from './contracts/PokemonNFTABI.json'; 
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function SearchPokemon() {
 
   const printPokemon = () => { 
     document.getElementById('pokemon-info').innerHTML = inputValue;
+    
   }
 
   return ( 
