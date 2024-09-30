@@ -1,25 +1,53 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from 'react'; 
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <div>
+        <h1> Pokemon Collection</h1>
+        <MintButton /> <br></br>
+        <SearchPokemon />
+
+        <p id="mint-pokemon"></p>
+        <p id="pokemon-info"></p>
+      </div>
     </div>
   );
+}
+
+function MintButton() {
+
+  const mintPokemon = () => {
+    const p = document.getElementById("mint-pokemon"); 
+    p.innerHTML = "minting Pokemon";
+
+  }
+
+  return (
+    <button onClick={mintPokemon}> Mint New Pokemon </button>
+  )
+}
+
+function SearchPokemon() {
+  const [inputValue, setInputValue] = useState('');
+
+  const fetchPokemon = () => {
+    
+  }
+
+  const printPokemon = () => { 
+    document.getElementById('pokemon-info').innerHTML = inputValue;
+  }
+
+  return ( 
+    <>
+      <label htmlFor="search">Pokemon: </label>
+      <input id="search-pokemon" type="text" onChange={(event) => {
+        setInputValue(event.target.value);
+      }}></input>
+      <button onClick={printPokemon}> Search </button>
+    </>
+  )
 }
 
 export default App;
