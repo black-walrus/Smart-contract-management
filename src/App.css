@@ -4,6 +4,7 @@
 
 
 #mint-pokemon-container {
+ 
   display: flex;
   justify-content: center; /* Center horizontally */
   align-items: center; /* Center vertically */
@@ -13,5 +14,11 @@
   border: 1px solid black;
   height: 350px;
   width: 350px;
+}
 
+.pokemon-profile {
+  border: 1px solid black;
+  height: 50px;
+  width: 350px;
+  margin-top: 17px;
 }
