@@ -47,6 +47,8 @@ To set up the Metamask Wallet,
 
 1. Click the extension on your browser and log in
 2. Once logged in, click on the upper-left icon. 
+
+
 ![wallet-menu](./assets/wallet-menu.png)
 
 3. In the Select Network, click 'Add Network'
