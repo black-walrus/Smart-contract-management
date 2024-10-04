@@ -7,19 +7,18 @@ import './App.css';
 function App() {
 
   // change contract address to deployed contract address 
-  const contractAddress = '0x13461526f0a36ac432555A8d83d4D26e6dE08443';
+  const contractAddress = '0x13d0d02ee3A38314f70b28C2A7E897526fD9a1F5';
 
-  const [errorMessage, setErrorMessage] = useState();
   const [account, setAccount] = useState(); 
-  const [connButtonText, setConnButtonText] = useState("Connect Wallet");
-
   const [contract, setContract] = useState();
   const [web3, setWeb3] = useState();
+  const [wallet, setWallet] = useState(); 
 
     useEffect(() => {
       if (window.ethereum) {
         const web3 = new Web3(window.ethereum);
         setWeb3(web3);
+        setWallet(true);
         window.ethereum.request({method: 'eth_requestAccounts'})
           .then(accounts => {
             setAccount(accounts[0]);
@@ -30,9 +29,7 @@ function App() {
             console.error("Error connecting to Metamask: ", error);
             alert("Please connect to MetaMask.");
           });
-      } else {
-        alert("Please install Metamask extension!");
-      }
+      } 
     }, []);
  
   const mintPokemon = async () => {
@@ -41,6 +38,9 @@ function App() {
       const pokemonNumber = Math.floor((Math.random() * 500) + 1); 
       p.innerHTML = "You've acquired: ";
   
+      document.getElementById("view-collection-btn").disabled = false;
+      document.getElementById("pokemon-nft-cards-container").replaceChildren(); 
+
       fetch(`${POKE_API_URL}/${pokemonNumber}`)
         .then((response) => response.json())
         .then(async (mintedPokemon) => {
@@ -99,45 +99,6 @@ function App() {
       
     }
 
-  const getPokemon = async () => {
-    try {
-      const pokemon = await contract.methods.getPokemon(0).call({from: account});
-      console.log(pokemon);
-      console.log();
-    } catch (error) {
-      console.error("Error getting Pokemon: ", error);
-    }
-  }
-
-  const getTotalPokemon = async () => {
-    try {
-      const totalPokemon = await contract.methods.getTotalPokemon().call({from: account});
-      console.log(totalPokemon);
-    } catch (error) {
-      console.error("Error getting total Pokemon: ", error);
-    }
-  }
-
-  const getPokemonLevel = async () => {
-    try {
-      const pokemonLevel = await contract.methods.getPokemonLevel(0).call({from: account});
-      console.log(pokemonLevel.toString());
-    } catch (error) {
-      console.error("Error getting Pokemon level: ", error);
-    }
-  }
-
-  const getPokemonTypes = async () => {
-    try{
-      const pokemonType1 = await contract.methods.getPokemonType1(0).call({from: account});
-      const pokemonType2 = await contract.methods.getPokemonType2(0).call({from: account});
-
-      console.log(pokemonType1, pokemonType2);
-    } catch (error) {
-      console.error("Error getting Pokemon types: ", error);
-    } 
-  }
-
   const createPokemonNFTCard = async (index) => {
     const POKE_API_URL = "https://pokeapi.co/api/v2/pokemon"; 
     const card = document.createElement('div');
@@ -167,7 +128,7 @@ function App() {
         pokemonImage.height = 250;
         pokemonImage.width = 250; 
 
-        if (_type2 != "NONE") {
+        if (_type2 != "None") {
           pokemonType.textContent += `/${_type2}`;
         }
 
@@ -185,8 +146,14 @@ function App() {
   
   const viewCollection = async () => {
     try {
+      document.getElementById("view-collection-btn").disabled = true;
+      document.getElementById("pokemon-nft-cards-container").replaceChildren(); 
+      const mintPokemonContainer = document.getElementById("mint-pokemon-container");
+      mintPokemonContainer.replaceChildren(); 
+
+      document.getElementById("mint-pokemon").innerHTML = "";
       const cardsContainer = document.getElementById('pokemon-nft-cards-container');
-      const collectionSize = 4; 
+      const collectionSize = await contract.methods.getNFTSize().call({from: account}); 
 
       for (let i = 0; i < collectionSize; i++) { 
         createPokemonNFTCard(i); 
@@ -195,18 +162,20 @@ function App() {
       console.error("Error getting Pokemon Collection: ", error);
     }
   }
-
-  return (
+  
+  if (wallet) {
+    return (
       <div className="App">
-        <div>
+        <div className="main-container">
           <h1> Pokemon Collection</h1>
 
           <div className="main-buttons">
             <button onClick={mintPokemon}>Mint Pokemon</button>
-            <button onClick={viewCollection}> View Pokemon Collection </button> 
+            <button id="view-collection-btn" onClick={viewCollection}> View Pokemon Collection </button> 
           </div>
 
-          <p>Account: {account}</p>
+          <p> Account : {account ? account : <button>Connect Account </button>}</p>
+    
           <h2 id="mint-pokemon"></h2>
           <div id="mint-pokemon-container"></div>
           <p id="pokemon-info"></p>
@@ -227,50 +196,19 @@ function App() {
         </style>
       </div>
     );
-}
-
-
-function SearchPokemon() {
-
-  const POKE_API_URL = "https://pokeapi.co/api/v2/pokemon";
-  const [inputValue, setInputValue] = useState('');
-
-  const fetchPokemon = () => {
-    
+  } else {
+    return (
+      <div className="App">
+        <div>
+          <h1> Pokemon Collection</h1>
+          <div id="wallet-install"> 
+              <h2> Please install the MetaMask Wallet extension</h2>
+          </div>
+        </div> 
+      </div>
+    )
   }
-
-  const printPokemon = () => { 
-    const pokemonName = inputValue.toLowerCase(); 
-
-    document.getElementById('pokemon-info').innerHTML = inputValue;
-    fetch(`${POKE_API_URL}/${pokemonName}`)
-      .then((response) => response.json()) 
-      .then((pokemon) => {
-        const pokemonCard = document.createElement('div'); 
-        const pokemonImage = document.createElement('img');
-        const pokemonName = document.createElement('h1'); 
-        const pokemonContainer = document.getElementById('pokemon-container');
-
-        pokemonCard.className = "card"
-        pokemonImage.src = pokemon.sprites.other.dream_world.front_default;
-        pokemonName.textContent = pokemon.name; 
-
-        pokemonCard.appendChild(pokemonName)
-        pokemonCard.appendChild(pokemonImage)
-        pokemonContainer.appendChild(pokemonCard);
-      
-      })
-  }
-
-  return ( 
-    <>
-      <label htmlFor="search">Pokemon: </label>
-      <input id="search-pokemon" type="text" onChange={(event) => {
-        setInputValue(event.target.value);
-      }}></input>
-      <button onClick={printPokemon}> Search </button>
-    </>
-  )
+  
 }
 
 export default App;
