@@ -92,5 +92,10 @@ at `http://localhost:3000`.
 
 Once the application loads, open the MetaMask wallet and connect the imported account to the localhost displayed at the bottom. You can now mint and view Pokemon NFTs.
  
+ # Authors 
+ Seth Gruspe
+
+@black-walrus
+
  # Credits 
  - This project uses data from [PokéAPI](https://pokeapi.co/) by Paul Hallett and PokéAPI contributors (https://github.com/PokeAPI/pokeapi#contributing)
