@@ -1,29 +1,164 @@
 import { useEffect, useState } from 'react'; 
-import { ethers } from 'ethers';
-import PokemonNFT from './build/contracts/PokemonNFT.json';
+import Web3 from 'web3';
+import PokemonNFT_abi from './PokemonNFT_abi.json';
 import './App.css';
 
 
 function App() {
+
+  // change contract address to deployed contract address 
+  const contractAddress = '0x13461526f0a36ac432555A8d83d4D26e6dE08443';
+
+  const [errorMessage, setErrorMessage] = useState();
   const [account, setAccount] = useState(); 
-  const [pokemon, setPokemon] = useState(); 
-  //const [contract, setContract] = useState();
+  const [connButtonText, setConnButtonText] = useState("Connect Wallet");
 
-  const rpcURL = 'http://127.0.0.1:8545'; 
-  const provider = new ethers.JsonRpcProvider(rpcURL); 
+  const [contract, setContract] = useState();
+  const [web3, setWeb3] = useState();
 
-  const signer = provider.getSigner();
-
-  const contractAddress = "0x7C246C325F461aA6c04bacC55F520A31966411D5";
-  const contract = new ethers.Contract(contractAddress, PokemonNFT.abi, signer);
+    useEffect(() => {
+      if (window.ethereum) {
+        const web3 = new Web3(window.ethereum);
+        setWeb3(web3);
+        window.ethereum.request({method: 'eth_requestAccounts'})
+          .then(accounts => {
+            setAccount(accounts[0]);
+            const contractInstance = new web3.eth.Contract(PokemonNFT_abi, contractAddress);
+            setContract(contractInstance);
+          })
+          .catch(error => {
+            console.error("Error connecting to Metamask: ", error);
+            alert("Please connect to MetaMask.");
+          });
+      } else {
+        alert("Please install Metamask extension!");
+      }
+    }, []);
+ 
+  const mintPokemon = async () => {
+      const POKE_API_URL = "https://pokeapi.co/api/v2/pokemon";
+      const p = document.getElementById("mint-pokemon"); 
+      const pokemonNumber = Math.floor((Math.random() * 500) + 1); 
+      p.innerHTML = "You've acquired: ";
   
-    return (
+      fetch(`${POKE_API_URL}/${pokemonNumber}`)
+        .then((response) => response.json())
+        .then(async (mintedPokemon) => {
+          const mintPokemonContainer = document.getElementById('mint-pokemon-container');
+          
+          const pokemonNFTCard = document.createElement('div'); 
+          const pokemonImage = document.createElement('img');
+          const pokemonName = document.createElement('h1'); 
+          const pokemonType = document.createElement('h3');
+          const pokemonProfile = document.createElement('div'); 
+  
+          // for supplying values to contract call 
+          var _name = "";
+          var _level = 50; 
+          var _type1 = ""; 
+          var _type2 = "None";
+          
+          pokemonImage.height = 250;
+          pokemonImage.width = 250; 
+  
+          pokemonNFTCard.className = "pokemon-mint-card"; 
+          pokemonProfile.className = "pokemon-profile";
+  
+          pokemonImage.src = mintedPokemon.sprites.other.dream_world.front_default;
+          pokemonName.textContent = mintedPokemon.name.toUpperCase();
+          _name = pokemonName.textContent; 
+  
+          pokemonType.textContent = `Types: ${mintedPokemon.types[0].type.name.toUpperCase()}`; 
+          _type1 = mintedPokemon.types[0].type.name.toUpperCase(); 
+        
+          if (mintedPokemon.types.length == 2) {
+            pokemonType.textContent += `/${mintedPokemon.types[1].type.name.toUpperCase()}`; 
+            _type2 = mintedPokemon.types[1].type.name.toUpperCase();
+          }
+  
+          // console.log(mintedPokemon.types[0].type.name);
+          // console.log(mintedPokemon.types[1].type.name);
+  
+          pokemonNFTCard.appendChild(pokemonName);
+          pokemonNFTCard.appendChild(pokemonImage); 
+  
+          pokemonProfile.appendChild(pokemonType);
+          pokemonNFTCard.appendChild(pokemonProfile);
+        
+          if (mintPokemonContainer.children.length > 0)
+            mintPokemonContainer.removeChild(mintPokemonContainer.firstChild);
+          document.getElementById('mint-pokemon-container').appendChild(pokemonNFTCard);
+          console.log(mintPokemonContainer.children.length);
+  
+          try {
+            await contract.methods.mintPokemon(_name, _level, _type1, _type2).send({from: account});  
+          } catch (error) {
+            console.error("Error minting Pokemon: ", error);
+          }
+        });
+      
+    }
+
+  const getPokemon = async () => {
+    try {
+      const pokemon = await contract.methods.getPokemon(0).call({from: account});
+      console.log(pokemon);
+      console.log();
+    } catch (error) {
+      console.error("Error getting Pokemon: ", error);
+    }
+  }
+
+  const getTotalPokemon = async () => {
+    try {
+      const totalPokemon = await contract.methods.getTotalPokemon().call({from: account});
+      console.log(totalPokemon);
+    } catch (error) {
+      console.error("Error getting total Pokemon: ", error);
+    }
+  }
+
+  const getPokemonLevel = async () => {
+    try {
+      const pokemonLevel = await contract.methods.getPokemonLevel(0).call({from: account});
+      console.log(pokemonLevel.toString());
+    } catch (error) {
+      console.error("Error getting Pokemon level: ", error);
+    }
+  }
+
+  const getPokemonTypes = async () => {
+    try{
+      const pokemonType1 = await contract.methods.getPokemonType1(0).call({from: account});
+      const pokemonType2 = await contract.methods.getPokemonType2(0).call({from: account});
+
+      console.log(pokemonType1, pokemonType2);
+    } catch (error) {
+      console.error("Error getting Pokemon types: ", error);
+    } 
+  }
+
+  const viewCollection = async () => {
+    try {
+      const collectionSize = 2; 
+      const collection = await contract.methods.pokemonNFTS().call({from: account});
+      console.log(collection.length);
+    } catch (error) {
+      console.error("Error getting Pokemon Collection: ", error);
+    }
+  }
+
+  return (
       <div className="App">
         <div>
           <h1> Pokemon Collection</h1>
-          <Buttons contract={contract}/>
-          {/* <SearchPokemon /> */}
-  
+
+          <div className="main-buttons">
+            <button onClick={mintPokemon}>Mint Pokemon</button>
+            <button onClick={viewCollection}> View Pokemon Collection </button> 
+          </div>
+          
+          <p>Account: {account}</p>
           <h2 id="mint-pokemon"></h2>
           <div id="mint-pokemon-container"></div>
           <p id="pokemon-info"></p>
@@ -39,98 +174,8 @@ function App() {
         </style>
       </div>
     );
- 
 }
 
-function Buttons({ contract }) {
-  return (
-    <div className="buttons">
-      <MintButton contract={contract}/>
-      <CollectionButton contract={contract}/> 
-    </div>
-  )
-}
-
-function MintButton({ contract }) {
-
-  const mintPokemon = async () => {
-    const POKE_API_URL = "https://pokeapi.co/api/v2/pokemon";
-    const p = document.getElementById("mint-pokemon"); 
-    const pokemonNumber = Math.floor((Math.random() * 500) + 1); 
-    p.innerHTML = "You've acquired: ";
-
-    fetch(`${POKE_API_URL}/${pokemonNumber}`)
-      .then((response) => response.json())
-      .then(async (mintedPokemon) => {
-        const mintPokemonContainer = document.getElementById('mint-pokemon-container');
-        
-        const pokemonNFTCard = document.createElement('div'); 
-        const pokemonImage = document.createElement('img');
-        const pokemonName = document.createElement('h1'); 
-        const pokemonType = document.createElement('h3');
-        const pokemonProfile = document.createElement('div'); 
-
-        // for supplying values to contract call 
-        var _name = "";
-        var _level = 50; 
-        var _type1 = ""; 
-        var _type2 = "None";
-        
-        pokemonImage.height = 250;
-        pokemonImage.width = 250; 
-
-        pokemonNFTCard.className = "pokemon-mint-card"; 
-        pokemonProfile.className = "pokemon-profile";
-
-        pokemonImage.src = mintedPokemon.sprites.other.dream_world.front_default;
-        pokemonName.textContent = mintedPokemon.name.toUpperCase();
-        _name = pokemonName.textContent; 
-
-        pokemonType.textContent = `Types: ${mintedPokemon.types[0].type.name.toUpperCase()}`; 
-        _type1 = mintedPokemon.types[0].type.name.toUpperCase(); 
-      
-        if (mintedPokemon.types.length == 2) {
-          pokemonType.textContent += `/${mintedPokemon.types[1].type.name.toUpperCase()}`; 
-          _type2 = mintedPokemon.types[1].type.name.toUpperCase();
-        }
-
-        // console.log(mintedPokemon.types[0].type.name);
-        // console.log(mintedPokemon.types[1].type.name);
-
-        pokemonNFTCard.appendChild(pokemonName);
-        pokemonNFTCard.appendChild(pokemonImage); 
-
-        pokemonProfile.appendChild(pokemonType);
-        pokemonNFTCard.appendChild(pokemonProfile);
-      
-        if (mintPokemonContainer.children.length > 0)
-          mintPokemonContainer.removeChild(mintPokemonContainer.firstChild);
-        document.getElementById('mint-pokemon-container').appendChild(pokemonNFTCard);
-        console.log(mintPokemonContainer.children.length);
-
-        await contract.mintPokemon(_name, _level, _type1, _type2);
-      })
-    
-  }
-
-  return (
-    <button className="mint-button" onClick={mintPokemon}> Mint New Pokemon </button>
-  )
-}
-
-function CollectionButton({contract}) {
-
-  const viewCollection = async () => {
-    const collection = await contract.getTotalPokemon().toString(); 
-    console.log(collection);
-  }
-
-
-
-  return (
-    <button onClick={viewCollection}>View Collection</button>
-  )
-}
 
 function SearchPokemon() {
 
