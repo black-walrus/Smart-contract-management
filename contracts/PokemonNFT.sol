@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT 
-pragma solidity ^0.8.18; 
+pragma solidity ^0.8.0; 
 
 contract PokemonNFT {
     
@@ -31,5 +31,9 @@ contract PokemonNFT {
 
     function getPokemonType2(uint index) public view returns (string memory) {
         return pokemonNFTTypes[index]["type2"];
+    }
+
+    function getNFTSize() public view returns (uint) {
+        return nftSize;
     }
 }
