@@ -7,7 +7,7 @@ import './App.css';
 function App() {
 
   // change contract address to deployed contract address 
-  const contractAddress = '0x13d0d02ee3A38314f70b28C2A7E897526fD9a1F5';
+  const contractAddress = '0xf337fafD7FB921eeFcc97cf376896e57B9DC5c33';
 
   const [account, setAccount] = useState(); 
   const [contract, setContract] = useState();
